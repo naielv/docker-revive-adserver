@@ -1,0 +1,50 @@
+services:
+  revive:
+    image: ghcr.io/naielv/docker-revive-adserver:master
+    container_name: revive-app
+    depends_on:
+      database:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    volumes:
+      - revive_images:/var/www/html/www/images
+      - revive_delivery:/var/www/html/www/delivery
+      - revive_data:/var/www/html/var
+    ports:
+      - "${REVIVE_PORT:-8080}:80"
+    networks:
+      - revive-network
+    restart: unless-stopped
+
+  database:
+    image: mariadb:11
+    container_name: revive-database
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-revive}
+      MARIADB_USER: ${MARIADB_USER:-revive}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-revive_password}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-root_password}
+    volumes:
+      - revive_database:/var/lib/mysql
+    networks:
+      - revive-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  revive_images:
+  revive_delivery:
+  revive_data:
+  revive_database:
+
+networks:
+  revive-network:
+    driver: bridge
