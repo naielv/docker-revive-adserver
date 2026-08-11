@@ -1,6 +1,8 @@
 services:
   revive:
-    image: ghcr.io/naielv/docker-revive-adserver:master
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: revive-app
     depends_on:
       database:
